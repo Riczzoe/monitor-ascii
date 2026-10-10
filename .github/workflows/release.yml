@@ -1,0 +1,72 @@
+name: Release theme
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: theme-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Validate version and set update repository
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const read = path => JSON.parse(readFileSync(path, 'utf8'));
+          const theme = read('theme.json');
+          const pkg = read('package.json');
+          const lock = read('package-lock.json');
+          assert.match(theme.version, /^\d+\.\d+(?:\.\d+)?$/, 'Publish a stable x.y or x.y.z version');
+          assert.equal(process.env.GITHUB_REF_NAME, `v${theme.version}`, 'Tag must match theme.json version');
+          const npmVersion = theme.version.split('.').length === 2 ? `${theme.version}.0` : theme.version;
+          assert.equal(pkg.version, npmVersion, 'package.json version must match normalized theme version');
+          assert.equal(lock.version, npmVersion, 'package-lock.json version must match normalized theme version');
+          assert.equal(lock.packages[''].version, npmVersion, 'Root lockfile package version must match');
+          assert.match(process.env.GITHUB_REPOSITORY ?? '', /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/, 'Missing GitHub repository');
+          theme.url = `https://github.com/${process.env.GITHUB_REPOSITORY}`;
+          writeFileSync('theme.json', JSON.stringify(theme, null, 2) + '\n');
+          console.log(`Building ${theme.version} with update source ${theme.url}`);
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build and package theme
+        run: npm run package
+
+      - name: Check archive and generate checksum
+        run: |
+          gzip -t theme.tar.gz
+          sha256sum theme.tar.gz > theme.tar.gz.sha256
+
+      - name: Publish latest stable release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release.mjs

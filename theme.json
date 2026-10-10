@@ -1,0 +1,43 @@
+{
+  "name": "Monitor ASCII",
+  "short": "monitor-ascii",
+  "description": "由 facl/komari-ascii 迁移的白底黑字主题：实时指标、双向流量和可切换时段的延迟柱状图。",
+  "version": "1.0",
+  "author": "facl (original theme); Monitor port",
+  "url": "",
+  "config": [
+    {
+      "type": "title",
+      "label": "首页"
+    },
+    {
+      "key": "notice",
+      "type": "text",
+      "label": "公告",
+      "default": "",
+      "help": "按纯文本显示，可换行"
+    },
+    {
+      "key": "show_stats",
+      "type": "boolean",
+      "label": "显示顶部在线数和总流量",
+      "default": true
+    },
+    {
+      "key": "show_groups",
+      "type": "boolean",
+      "label": "显示分组",
+      "default": true
+    },
+    {
+      "type": "title",
+      "label": "节点详情"
+    },
+    {
+      "key": "show_ping",
+      "type": "boolean",
+      "label": "显示前三项延迟检查",
+      "default": true
+    }
+  ]
+}

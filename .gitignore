@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.package/
+theme.tar.gz
+theme.tar.gz.sha256
+*.tsbuildinfo
+qa-output/
